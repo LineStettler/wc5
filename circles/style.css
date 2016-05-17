@@ -1,0 +1,64 @@
+.simpleControl {
+    -fx-padding: 2;
+    -fx-background-color: black;
+    -base-color: rgb(2, 138, 204);
+}
+
+.simpleControl .display {
+    -fx-font-family: 'Roboto Light';
+    -fx-font-size: 68;
+    -fx-fill: white;
+}
+
+.simpleControl .frame {
+    -fx-fill: derive(-base-color, 50%);
+    -fx-stroke: -base-color;
+    -fx-stroke-width: 5;
+    -fx-stroke-type: inside;
+}
+
+.arc1{
+    -fx-stroke: rgba(45,46,131,50);
+    -fx-fill: null;
+    -fx-stroke-width: 10;
+    -fx-stroke-line-cap: round;
+
+}
+.arc1back{
+    -fx-stroke: #222;
+    -fx-fill: null;
+    -fx-stroke-width: 10;
+    -fx-stroke-line-cap: round;
+}
+.arc2{
+    -fx-stroke: cornflowerblue;
+    -fx-fill: null;
+    -fx-stroke-width: 10;
+    -fx-stroke-line-cap: round;
+}
+
+.arc2back{
+    -fx-stroke: #222;
+    -fx-fill: null;
+    -fx-stroke-width: 10;
+    -fx-stroke-line-cap: round;
+}
+.arc3{
+    -fx-stroke: powderblue;
+    -fx-fill: null;
+    -fx-stroke-width: 10;
+}
+
+.circle{
+    -fx-stroke: #00005b;
+    -fx-stroke-width: 1;
+    -fx-fill: null;
+    -fx-show-tick-labels: false;
+    -fx-show-tick-marks: true;
+}
+.label{
+    -fx-position-shape: inherit;
+    -fx-font-size: 30px;
+    -fx-font-color: #4a91ff;
+}
+
