@@ -50,7 +50,7 @@
 }
 
 .circle{
-    -fx-stroke: #00005b;
+    -fx-stroke: #111;
     -fx-stroke-width: 1;
     -fx-fill: null;
     -fx-show-tick-labels: false;

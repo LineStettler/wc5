@@ -1,5 +1,6 @@
 package ch.fhnw.ws4c.circles;
 
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Insets;
@@ -112,7 +113,8 @@ public class SimpleControl extends Region {
         tickMarks = new NumberAxis(0, 360 , 30);
         tickMarks.forceZeroInRangeProperty();
 
-        relocateDisplay();
+
+        Platform.runLater(this::relocateDisplay);
 
         //frame = new Rectangle(0.0, 0.0, PREFERRED_WIDTH, PREFERRED_HEIGHT);
         //frame.getStyleClass().add("frame");
@@ -125,7 +127,7 @@ public class SimpleControl extends Region {
     }
 
     private void layoutParts() {
-        drawingPane.getChildren().addAll(circle, arc1back, arc2back, arc1, arc2, marks, display);
+        drawingPane.getChildren().addAll( arc1back, arc2back, arc1, arc2, marks, display);
         getChildren().add(drawingPane);
     }
 
@@ -154,8 +156,8 @@ public class SimpleControl extends Region {
             relocateDisplay();
         });
 
-        arc1.lengthProperty().addListener((observable, oldValue, newValue) -> setText(String.format("%2.0f", -1 * (arc2.lengthProperty().getValue() / 15 ) % 24) + ":" + String.format("%2.0f", -1 * ((newValue.doubleValue() / 6) ) % 60)));
-        arc2.lengthProperty().addListener((observable, oldValue, newValue) -> setText(String.format("%2.0f", -1 * (newValue.doubleValue() / 15 ) % 24) + ":" + String.format("%2.0f", -1 * (arc1.lengthProperty().getValue() / 6 ) % 60)));
+        arc1.lengthProperty().addListener((observable, oldValue, newValue) -> setText(String.format("%2.0f", -1 * (arc2.lengthProperty().getValue() / 15 +0.6) % 23) + ":" + String.format("%2.0f", -1 * ((newValue.doubleValue() / 6) ) % 59)));
+        arc2.lengthProperty().addListener((observable, oldValue, newValue) -> setText(String.format("%2.0f", -1 * (newValue.doubleValue() / 15 +0.6) % 23) + ":" + String.format("%2.0f", -1 * (arc1.lengthProperty().getValue() / 6 ) % 59)));
 
         // always needed
         widthProperty().addListener((observable, oldValue, newValue) -> resize());
