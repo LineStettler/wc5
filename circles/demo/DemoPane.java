@@ -43,18 +43,15 @@ public class DemoPane extends BorderPane {
 
 		customControl = new SimpleControl();
 
-		valueField = new TextField();
 	}
 
 	private void layoutControls() {
-		setMargin(valueField, new Insets(0, 0, 10, 10));
 
 		setCenter(customControl);
-		setRight(valueField);
 	}
 
 	private void addBindings() {
-		valueField.textProperty().bindBidirectional(customControl.textProperty());
+		//valueField.textProperty().bindBidirectional(customControl.textProperty());
 	}
 
 }

@@ -1,6 +1,12 @@
 package ch.fhnw.ws4c.circles;
 
+import javafx.animation.Animation;
+import javafx.animation.FillTransition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Insets;
@@ -11,6 +17,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Label;
+import javafx.scene.effect.BlurType;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
@@ -19,6 +27,13 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.RotateBuilder;
 import javafx.scene.paint.Paint;
+import ch.fhnw.ws4c.circles.Switch;
+import javafx.util.Duration;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Calendar;
+
 /**
  * @author Dieter Holz
  */
@@ -36,10 +51,22 @@ public class SimpleControl extends Region {
 
     private static final double MAXIMUM_WIDTH = 800;
 
+    private static final double SWITCH_PREFERRED_WIDTH  = 40;
+    private static final double SWITCH_PREFERRED_HEIGHT = 26;
+
+    private static final double SWITCH_ASPECT_RATIO = PREFERRED_WIDTH / PREFERRED_HEIGHT;
+
+    private static final double SWITCH_MINIMUM_WIDTH  = 20;
+    private static final double SWITCH_MINIMUM_HEIGHT = MINIMUM_WIDTH / ASPECT_RATIO;
+
+    private static final double SWITCH_MAXIMUM_WIDTH = 160;
+
+    private static final Color THUMB_ON  = Color.rgb(62, 130, 247);
+    private static final Color THUMB_OFF = Color.rgb(245,245,245);
+    private static final Color FRAME_ON  = Color.rgb(162, 197, 255);
+    private static final Color FRAME_OFF = Color.rgb(153, 153, 153);
+
     // all parts
-    //private Text      display;
-    //private Rectangle frame;
-    private Circle circle;
     private Arc arc1;
     private Arc arc2;
     private Arc arc1back;
@@ -47,23 +74,34 @@ public class SimpleControl extends Region {
     private Arc arc3;
     private Text display;
     private Pane drawingPane;
-    private NumberAxis tickMarks;
 
-    private int tickLen = 20;
-    private int tickColor = 0;
+    // all Switch parts
+    private Circle    thumb;
+    private Rectangle frame;
 
+    // all Switch animations;
+    private Animation onAnimation;
+    private Animation offAnimation;
 
     // all properties
-    private final StringProperty text = new SimpleStringProperty("12:30");
+    private final BooleanProperty on = new SimpleBooleanProperty();
+
+
+    DateFormat df = new SimpleDateFormat("hh:mm");
+    Date today = Calendar.getInstance().getTime();
+    String reportDate = df.format(today);
+    private final StringProperty text = new SimpleStringProperty(reportDate);
     private Node marks;
 
     public SimpleControl() {
         init();
         initializeParts();
         layoutParts();
+        initializeAnimations();
         addEventHandlers();
         addValueChangedListeners();
         addBindings();
+        setOn(true);
     }
 
     private void init() {
@@ -79,20 +117,18 @@ public class SimpleControl extends Region {
         display.setTextAlignment(TextAlignment.CENTER);
         display.setY(PREFERRED_HEIGHT * 0.5);
 
+
         arc1 = new Arc(PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, 90, -90);
         arc1back = new Arc(PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, -90, 360);
 
-        circle = new Circle(PREFERRED_HEIGHT * 0.43);
         arc2 = new Arc(PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, 90, -230);
         arc2back = new Arc(PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, 90, 360);
         arc3 = new Arc(PREFERRED_HEIGHT * 0.25, PREFERRED_HEIGHT * 0.25, PREFERRED_HEIGHT * 0.25, PREFERRED_HEIGHT * 0.25, 360, 130);
 
-        circle.setCenterX(PREFERRED_HEIGHT * 0.5);
         arc1.setCenterX(PREFERRED_HEIGHT * 0.5);
         arc1.setCenterY(PREFERRED_HEIGHT * 0.5);
         arc1back.setCenterX(PREFERRED_HEIGHT * 0.5);
         arc1back.setCenterY(PREFERRED_HEIGHT * 0.5);
-        circle.setCenterY(PREFERRED_HEIGHT * 0.5);
         arc2.setCenterX(PREFERRED_HEIGHT * 0.5);
         arc2.setCenterY(PREFERRED_HEIGHT * 0.5);
         arc2back.setCenterX(PREFERRED_HEIGHT * 0.5);
@@ -100,24 +136,27 @@ public class SimpleControl extends Region {
         arc3.setCenterX(PREFERRED_HEIGHT * 0.5);
         arc3.setCenterY(PREFERRED_HEIGHT * 0.5);
 
-
-
         arc1.getStyleClass().add("arc1");
         arc1back.getStyleClass().add("arc1back");
         arc2back.getStyleClass().add("arc2back");
         arc2.getStyleClass().add("arc2");
         arc3.getStyleClass().add("arc3");
-        circle.getStyleClass().add("circle");
+
+
+        thumb = new Circle(12, 13, 10);
+        thumb.setCenterX(PREFERRED_HEIGHT * 0.5-15);
+        thumb.setCenterY(PREFERRED_HEIGHT * 0.67);
+
+        thumb.getStyleClass().add("thumb");
+        thumb.setStrokeWidth(0);
+        thumb.setEffect(new DropShadow(BlurType.GAUSSIAN, Color.rgb(0, 0, 0, 0.3), 4, 0, 0, 1));
+
+        frame = new Rectangle(PREFERRED_HEIGHT * 0.5-15, PREFERRED_HEIGHT * 0.67 - 6, SWITCH_PREFERRED_WIDTH - 4, SWITCH_PREFERRED_HEIGHT - 12);
+        frame.getStyleClass().add("frame");
 
         marks = tickMarks();
-        tickMarks = new NumberAxis(0, 360 , 30);
-        tickMarks.forceZeroInRangeProperty();
-
 
         Platform.runLater(this::relocateDisplay);
-
-        //frame = new Rectangle(0.0, 0.0, PREFERRED_WIDTH, PREFERRED_HEIGHT);
-        //frame.getStyleClass().add("frame");
 
         // always needed
         drawingPane = new Pane();
@@ -127,8 +166,30 @@ public class SimpleControl extends Region {
     }
 
     private void layoutParts() {
-        drawingPane.getChildren().addAll( arc1back, arc2back, arc1, arc2, marks, display);
+        drawingPane.getChildren().addAll( arc1back, arc2back, arc1, arc2, display, marks, frame, thumb);
         getChildren().add(drawingPane);
+    }
+
+    private void initializeAnimations() {
+        Duration duration = Duration.millis(200);
+
+        TranslateTransition onTransition = new TranslateTransition(duration, thumb);
+        onTransition.setFromX(30.0);
+        onTransition.setToX(2.0);
+
+        FillTransition onFillThumb = new FillTransition(duration, thumb, THUMB_OFF, THUMB_ON);
+        FillTransition onFillFrame = new FillTransition(duration, frame, FRAME_OFF, FRAME_ON);
+
+        onAnimation = new ParallelTransition(onTransition, onFillThumb, onFillFrame);
+
+        TranslateTransition offTransition = new TranslateTransition(duration, thumb);
+        offTransition.setFromX(2);
+        offTransition.setToX(30.0);
+
+        FillTransition offFillThumb = new FillTransition(duration, thumb, THUMB_ON, THUMB_OFF);
+        FillTransition offFillFrame = new FillTransition(duration, frame, FRAME_ON, FRAME_OFF);
+
+        offAnimation = new ParallelTransition(offTransition, offFillThumb, offFillFrame);
     }
 
     private void addEventHandlers() {
@@ -144,20 +205,35 @@ public class SimpleControl extends Region {
             arc3.setLength(Math.min(360.0, event.getY()));
 
         });
+
+
+        thumb.setOnMouseClicked(event -> {
+            setOn(!getOn());
+        });
     }
 
+    public String getTime(){
+        return display.getText();
+    }
     private void addValueChangedListeners() {
         textProperty().addListener((observable, oldValue, newValue) -> {
             display.setText(newValue);
             String[] values = display.getText().split(":");
-            //arc1.setLength(-1*Integer.parseInt(values[1])*6 + 1);
-            //arc2.setLength(-1*Integer.parseInt(values[0])*15  + 1);
-            //display.autosize();
             relocateDisplay();
         });
 
-        arc1.lengthProperty().addListener((observable, oldValue, newValue) -> setText(String.format("%2.0f", -1 * (arc2.lengthProperty().getValue() / 15 +0.6) % 23) + ":" + String.format("%2.0f", -1 * ((newValue.doubleValue() / 6) ) % 59)));
-        arc2.lengthProperty().addListener((observable, oldValue, newValue) -> setText(String.format("%2.0f", -1 * (newValue.doubleValue() / 15 +0.6) % 23) + ":" + String.format("%2.0f", -1 * (arc1.lengthProperty().getValue() / 6 ) % 59)));
+        arc1.lengthProperty().addListener((observable, oldValue, newValue) -> setText(String.format("%2.0f", -1 * (arc2.lengthProperty().getValue() / 30 +0.5) % 11) + ":" + String.format("%2.0f", -1 * ((newValue.doubleValue() / 6) ) % 59)));
+        arc2.lengthProperty().addListener((observable, oldValue, newValue) -> setText(String.format("%2.0f", -1 * (newValue.doubleValue() / 30 +0.5) % 11) + ":" + String.format("%2.0f", -1 * (arc1.lengthProperty().getValue() / 6 ) % 59)));
+
+        onProperty().addListener((observable, oldValue, newValue) -> {
+            onAnimation.stop();
+            offAnimation.stop();
+            if (newValue) {
+                onAnimation.play();
+            } else {
+                offAnimation.play();
+            }
+        });
 
         // always needed
         widthProperty().addListener((observable, oldValue, newValue) -> resize());
@@ -215,7 +291,7 @@ public class SimpleControl extends Region {
 
     private Node tickMarks() {
         Group tickMarkGroup = new Group();
-        for (int n = 0; n < 24; n++) {
+        for (int n = 0; n < 12; n++) {
             tickMarkGroup.getChildren().add(tickMark(n));
         }
         return tickMarkGroup;
@@ -226,14 +302,14 @@ public class SimpleControl extends Region {
                 .startX(unit)
                 .endX(unit)
                 .startY(unit * 0.12)
-                .endY(unit * (n %  6== 0 ? 0.2 : 0.1))
-                .strokeWidth(n % 6 == 0 ? 3 : 1)
+                .endY(unit * (n %  3== 0 ? 0.2 : 0.1))
+                .strokeWidth(n % 3 == 0 ? 3 : 1)
                 .stroke(Color.DIMGRAY)
                 .transforms(
                         RotateBuilder.create()
                                 .pivotX(unit)
                                 .pivotY(unit)
-                                .angle(360 / 24 * n)
+                                .angle(360 / 12 * n)
                                 .build()
                 )
                 .strokeWidth(2)
@@ -290,4 +366,18 @@ public class SimpleControl extends Region {
         this.text.set(text);
     }
 
+    public boolean getOn() {
+        return on.get();
+    }
+
+    public BooleanProperty onProperty() {
+        return on;
+    }
+
+    public void setOn(boolean on) {
+        this.on.set(on);
+    }
 }
+
+
+
