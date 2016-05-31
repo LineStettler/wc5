@@ -15,8 +15,6 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.control.Label;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.Pane;
@@ -26,8 +24,6 @@ import javafx.scene.shape.*;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.RotateBuilder;
-import javafx.scene.paint.Paint;
-import ch.fhnw.ws4c.circles.Switch;
 import javafx.util.Duration;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -51,47 +47,39 @@ public class SimpleControl extends Region {
 
     private static final double MAXIMUM_WIDTH = 800;
 
-    private static final double SWITCH_PREFERRED_WIDTH  = 40;
-    private static final double SWITCH_PREFERRED_HEIGHT = 26;
-
-    private static final double SWITCH_ASPECT_RATIO = PREFERRED_WIDTH / PREFERRED_HEIGHT;
-
-    private static final double SWITCH_MINIMUM_WIDTH  = 20;
-    private static final double SWITCH_MINIMUM_HEIGHT = MINIMUM_WIDTH / ASPECT_RATIO;
-
-    private static final double SWITCH_MAXIMUM_WIDTH = 160;
-
     private static final Color THUMB_ON  = Color.rgb(62, 130, 247);
     private static final Color THUMB_OFF = Color.rgb(245,245,245);
-    private static final Color FRAME_ON  = Color.rgb(162, 197, 255);
-    private static final Color FRAME_OFF = Color.rgb(153, 153, 153);
 
-    // all parts
+
+    // all watch parts
+    private Pane drawingPane;
     private Arc arc1;
     private Arc arc2;
     private Arc arc1back;
     private Arc arc2back;
-    private Arc arc3;
+
     private Text display;
-    private Pane drawingPane;
+    private Node marks;
 
-    // all Switch parts
-    private Circle    thumb;
-    private Rectangle frame;
+    // all am/pm parts
+    private Circle thumb;
+    private Text   amPm;
 
-    // all Switch animations;
+    // all am/pm animations;
     private Animation onAnimation;
     private Animation offAnimation;
 
     // all properties
     private final BooleanProperty on = new SimpleBooleanProperty();
 
-
+    //variables to get the actual time
     DateFormat df = new SimpleDateFormat("hh:mm");
     Date today = Calendar.getInstance().getTime();
     String reportDate = df.format(today);
     private final StringProperty text = new SimpleStringProperty(reportDate);
-    private Node marks;
+    private String am = (today.getHours() > 12 ? "pm" : "am");
+    private int hours = today.getHours();
+    private int minutes = today.getMinutes();
 
     public SimpleControl() {
         init();
@@ -110,6 +98,7 @@ public class SimpleControl extends Region {
     }
 
     private void initializeParts() {
+        //Time-display
         display = new Text(getText());
         display.getStyleClass().add("display");
         applyCss(display);
@@ -117,45 +106,43 @@ public class SimpleControl extends Region {
         display.setTextAlignment(TextAlignment.CENTER);
         display.setY(PREFERRED_HEIGHT * 0.5);
 
-
-        arc1 = new Arc(PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, 90, -90);
+        //Minutes circle
+        arc1 = new Arc(PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, 90, -(minutes*6)%360);
         arc1back = new Arc(PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, PREFERRED_HEIGHT * 0.33, -90, 360);
-
-        arc2 = new Arc(PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, 90, -230);
-        arc2back = new Arc(PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, 90, 360);
-        arc3 = new Arc(PREFERRED_HEIGHT * 0.25, PREFERRED_HEIGHT * 0.25, PREFERRED_HEIGHT * 0.25, PREFERRED_HEIGHT * 0.25, 360, 130);
-
         arc1.setCenterX(PREFERRED_HEIGHT * 0.5);
         arc1.setCenterY(PREFERRED_HEIGHT * 0.5);
         arc1back.setCenterX(PREFERRED_HEIGHT * 0.5);
         arc1back.setCenterY(PREFERRED_HEIGHT * 0.5);
+        arc1.getStyleClass().add("arc1");
+        arc1back.getStyleClass().add("arc1back");
+
+        //Hours circle
+        arc2 = new Arc(PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, 90, -(hours*30)%360);
+        arc2back = new Arc(PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, PREFERRED_HEIGHT * 0.38, 90, 360);
         arc2.setCenterX(PREFERRED_HEIGHT * 0.5);
         arc2.setCenterY(PREFERRED_HEIGHT * 0.5);
         arc2back.setCenterX(PREFERRED_HEIGHT * 0.5);
         arc2back.setCenterY(PREFERRED_HEIGHT * 0.5);
-        arc3.setCenterX(PREFERRED_HEIGHT * 0.5);
-        arc3.setCenterY(PREFERRED_HEIGHT * 0.5);
-
-        arc1.getStyleClass().add("arc1");
-        arc1back.getStyleClass().add("arc1back");
         arc2back.getStyleClass().add("arc2back");
         arc2.getStyleClass().add("arc2");
-        arc3.getStyleClass().add("arc3");
 
-
-        thumb = new Circle(12, 13, 10);
+        //am/pm button
+        thumb = new Circle(12, 13, 12);
         thumb.setCenterX(PREFERRED_HEIGHT * 0.5-15);
         thumb.setCenterY(PREFERRED_HEIGHT * 0.67);
-
         thumb.getStyleClass().add("thumb");
         thumb.setStrokeWidth(0);
         thumb.setEffect(new DropShadow(BlurType.GAUSSIAN, Color.rgb(0, 0, 0, 0.3), 4, 0, 0, 1));
+        amPm = new Text(am);
+        amPm.getStyleClass().add("amPm");
+        amPm.setX(PREFERRED_HEIGHT * 0.5-24);
+        amPm.setY(PREFERRED_HEIGHT * 0.67+4);
+        amPm.setTextAlignment(TextAlignment.CENTER);
 
-        frame = new Rectangle(PREFERRED_HEIGHT * 0.5-15, PREFERRED_HEIGHT * 0.67 - 6, SWITCH_PREFERRED_WIDTH - 4, SWITCH_PREFERRED_HEIGHT - 12);
-        frame.getStyleClass().add("frame");
-
+        //tickMarks
         marks = tickMarks();
 
+        //puts all parts to their defined place
         Platform.runLater(this::relocateDisplay);
 
         // always needed
@@ -166,7 +153,8 @@ public class SimpleControl extends Region {
     }
 
     private void layoutParts() {
-        drawingPane.getChildren().addAll( arc1back, arc2back, arc1, arc2, display, marks, frame, thumb);
+        //add all parts to the Pane
+        drawingPane.getChildren().addAll( arc1back, arc2back, arc1, arc2, display, marks, thumb, amPm);
         getChildren().add(drawingPane);
     }
 
@@ -176,54 +164,59 @@ public class SimpleControl extends Region {
         TranslateTransition onTransition = new TranslateTransition(duration, thumb);
         onTransition.setFromX(30.0);
         onTransition.setToX(2.0);
+        TranslateTransition onTransitionText = new TranslateTransition(duration, amPm);
+        onTransitionText.setFromX(30.0);
+        onTransitionText.setToX(2.0);
 
         FillTransition onFillThumb = new FillTransition(duration, thumb, THUMB_OFF, THUMB_ON);
-        FillTransition onFillFrame = new FillTransition(duration, frame, FRAME_OFF, FRAME_ON);
-
-        onAnimation = new ParallelTransition(onTransition, onFillThumb, onFillFrame);
+        onAnimation = new ParallelTransition(onTransition, onFillThumb, onTransitionText);
 
         TranslateTransition offTransition = new TranslateTransition(duration, thumb);
         offTransition.setFromX(2);
         offTransition.setToX(30.0);
+        TranslateTransition offTransitionText = new TranslateTransition(duration, amPm);
+        offTransitionText.setFromX(2);
+        offTransitionText.setToX(30.0);
 
         FillTransition offFillThumb = new FillTransition(duration, thumb, THUMB_ON, THUMB_OFF);
-        FillTransition offFillFrame = new FillTransition(duration, frame, FRAME_ON, FRAME_OFF);
-
-        offAnimation = new ParallelTransition(offTransition, offFillThumb, offFillFrame);
+        offAnimation = new ParallelTransition(offTransition, offFillThumb, offTransitionText);
     }
 
     private void addEventHandlers() {
         arc1.setOnMouseDragged(event -> {
             arc1.setLength(Math.min(360.0, -event.getY()));
-
         });
+
         arc2.setOnMouseDragged(event -> {
             arc2.setLength(Math.min(360.0, -event.getY()));
-
-        });
-        arc3.setOnMouseDragged(event -> {
-            arc3.setLength(Math.min(360.0, event.getY()));
-
         });
 
-
-        thumb.setOnMouseClicked(event -> {
+        amPm.setOnMouseClicked(event -> {
             setOn(!getOn());
+            if(getOn())
+                amPm.setText("am");
+            else {
+                amPm.setText("pm");
+            }
         });
     }
 
     public String getTime(){
         return display.getText();
     }
+
     private void addValueChangedListeners() {
-        textProperty().addListener((observable, oldValue, newValue) -> {
+            textProperty().addListener((observable, oldValue, newValue) -> {
             display.setText(newValue);
-            String[] values = display.getText().split(":");
             relocateDisplay();
         });
 
-        arc1.lengthProperty().addListener((observable, oldValue, newValue) -> setText(String.format("%2.0f", -1 * (arc2.lengthProperty().getValue() / 30 +0.5) % 11) + ":" + String.format("%2.0f", -1 * ((newValue.doubleValue() / 6) ) % 59)));
-        arc2.lengthProperty().addListener((observable, oldValue, newValue) -> setText(String.format("%2.0f", -1 * (newValue.doubleValue() / 30 +0.5) % 11) + ":" + String.format("%2.0f", -1 * (arc1.lengthProperty().getValue() / 6 ) % 59)));
+        arc1.lengthProperty().addListener((observable, oldValue, newValue) ->
+                setText(String.format("%2.0f",( -1 * (arc2.lengthProperty().getValue() / 30 +0.5) % 11)+ (getOn()?0:12))
+                        + ":" + String.format("%2.0f", (-1 * ((newValue.doubleValue() / 6) ) % 59) )));
+        arc2.lengthProperty().addListener((observable, oldValue, newValue) ->
+                setText(String.format("%2.0f", (-1 * (newValue.doubleValue() / 30 +0.5) % 11)+(getOn()?0:12)) + ":"
+                        + String.format("%2.0f", -1 * (arc1.lengthProperty().getValue() / 6 ) % 59)));
 
         onProperty().addListener((observable, oldValue, newValue) -> {
             onAnimation.stop();
@@ -241,8 +234,6 @@ public class SimpleControl extends Region {
     }
 
     private void addBindings() {
-
-
     }
 
     private void resize() {
@@ -289,6 +280,9 @@ public class SimpleControl extends Region {
         return className.substring(0, 1).toLowerCase() + className.substring(1);
     }
 
+    /*!
+     * draws 12 tickMarks
+     */
     private Node tickMarks() {
         Group tickMarkGroup = new Group();
         for (int n = 0; n < 12; n++) {
@@ -296,6 +290,10 @@ public class SimpleControl extends Region {
         }
         return tickMarkGroup;
     }
+
+    /*!
+     * draws a tickMark in the right angle
+     */
     private Node tickMark(int n) {
         double unit = PREFERRED_HEIGHT * 0.5;
         return LineBuilder.create()
