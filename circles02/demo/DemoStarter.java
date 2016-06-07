@@ -16,7 +16,7 @@
  *
  */
 
-package ch.fhnw.ws4c.circles.demo;
+package ch.fhnw.ws4c.circles02.demo;
 
 import javafx.application.Application;
 import javafx.scene.Scene;

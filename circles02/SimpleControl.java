@@ -1,4 +1,4 @@
-package ch.fhnw.ws4c.circles;
+package ch.fhnw.ws4c.circles02;
 
 import javafx.animation.Animation;
 import javafx.animation.FillTransition;
@@ -15,10 +15,12 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.TextField;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.text.Text;
@@ -37,8 +39,8 @@ public class SimpleControl extends Region {
     private static final String FONTS_CSS = "fonts.css";
     private static final String STYLE_CSS = "style.css";
 
-    private static final double PREFERRED_WIDTH = 300;
-    private static final double PREFERRED_HEIGHT = 300;
+    private static final double PREFERRED_WIDTH = 200;
+    private static final double PREFERRED_HEIGHT = 200;
 
     private static final double ASPECT_RATIO = PREFERRED_WIDTH / PREFERRED_HEIGHT;
 
@@ -49,6 +51,8 @@ public class SimpleControl extends Region {
 
     private static final Color THUMB_ON  = Color.rgb(62, 130, 247);
     private static final Color THUMB_OFF = Color.rgb(245,245,245);
+
+    private TextField input;
 
 
     // all watch parts
@@ -77,7 +81,7 @@ public class SimpleControl extends Region {
     Date today = Calendar.getInstance().getTime();
     String reportDate = df.format(today);
     private final StringProperty text = new SimpleStringProperty(reportDate);
-    private String am = (today.getHours() > 12 ? "pm" : "am");
+    private String am = (today.getHours() < 13 ? "am" : "pm");
     private int hours = today.getHours();
     private int minutes = today.getMinutes();
 
@@ -98,6 +102,8 @@ public class SimpleControl extends Region {
     }
 
     private void initializeParts() {
+
+
         //Time-display
         display = new Text(getText());
         display.getStyleClass().add("display");
@@ -127,16 +133,17 @@ public class SimpleControl extends Region {
         arc2.getStyleClass().add("arc2");
 
         //am/pm button
-        thumb = new Circle(12, 13, 12);
-        thumb.setCenterX(PREFERRED_HEIGHT * 0.5-15);
-        thumb.setCenterY(PREFERRED_HEIGHT * 0.67);
+        thumb = new Circle(9, 9, 8);
+        int x = am == "am" ? 0 : 20;
+        thumb.setCenterX(PREFERRED_HEIGHT * 0.45 );
+        thumb.setCenterY(PREFERRED_HEIGHT * 0.68);
         thumb.getStyleClass().add("thumb");
         thumb.setStrokeWidth(0);
         thumb.setEffect(new DropShadow(BlurType.GAUSSIAN, Color.rgb(0, 0, 0, 0.3), 4, 0, 0, 1));
         amPm = new Text(am);
         amPm.getStyleClass().add("amPm");
-        amPm.setX(PREFERRED_HEIGHT * 0.5-24);
-        amPm.setY(PREFERRED_HEIGHT * 0.67+4);
+        amPm.setX(PREFERRED_HEIGHT * 0.45-6);
+        amPm.setY(PREFERRED_HEIGHT * 0.68+3);
         amPm.setTextAlignment(TextAlignment.CENTER);
 
         //tickMarks
@@ -154,18 +161,19 @@ public class SimpleControl extends Region {
 
     private void layoutParts() {
         //add all parts to the Pane
-        drawingPane.getChildren().addAll( arc1back, arc2back, arc1, arc2, display, marks, thumb, amPm);
+        drawingPane.getChildren().addAll( arc1back, arc2back, arc1, arc2, display, marks, thumb, amPm );
         getChildren().add(drawingPane);
+
     }
 
     private void initializeAnimations() {
         Duration duration = Duration.millis(200);
 
         TranslateTransition onTransition = new TranslateTransition(duration, thumb);
-        onTransition.setFromX(30.0);
+        onTransition.setFromX(20.0);
         onTransition.setToX(2.0);
         TranslateTransition onTransitionText = new TranslateTransition(duration, amPm);
-        onTransitionText.setFromX(30.0);
+        onTransitionText.setFromX(20.0);
         onTransitionText.setToX(2.0);
 
         FillTransition onFillThumb = new FillTransition(duration, thumb, THUMB_OFF, THUMB_ON);
@@ -173,10 +181,10 @@ public class SimpleControl extends Region {
 
         TranslateTransition offTransition = new TranslateTransition(duration, thumb);
         offTransition.setFromX(2);
-        offTransition.setToX(30.0);
+        offTransition.setToX(20.0);
         TranslateTransition offTransitionText = new TranslateTransition(duration, amPm);
         offTransitionText.setFromX(2);
-        offTransitionText.setToX(30.0);
+        offTransitionText.setToX(20.0);
 
         FillTransition offFillThumb = new FillTransition(duration, thumb, THUMB_ON, THUMB_OFF);
         offAnimation = new ParallelTransition(offTransition, offFillThumb, offTransitionText);
@@ -184,49 +192,84 @@ public class SimpleControl extends Region {
 
     private void addEventHandlers() {
         arc1.setOnMouseDragged(event -> {
-            arc1.setLength(Math.min(360.0, -event.getY()));
+            //arc1.setLength(Math.min(360.0, -event.getY()));
+                setText(String.format("%02.0f", (-1 * (arc2.lengthProperty().getValue() / 30 + 0.5) % 11) + (getOn() ? 0 : 12))
+                        + ":" + String.format("%02.0f", (-1 * ((-event.getY() / 6)) % 59)));
+
         });
 
         arc2.setOnMouseDragged(event -> {
-            arc2.setLength(Math.min(360.0, -event.getY()));
+            //arc2.setLength(Math.min(360.0, -event.getY()));
+                setText(String.format("%02.0f", (-1 * (-event.getY() / 30 + 0.5) % 11) + (getOn() ? 0 : 12)) + ":"
+                        + String.format("%02.0f", -1 * (arc1.lengthProperty().getValue() / 6) % 59));
+
+
         });
 
         amPm.setOnMouseClicked(event -> {
             setOn(!getOn());
-            if(getOn())
+            String[] time = display.getText().split(":");
+            if (getOn()){
+                onAnimation.play();
                 amPm.setText("am");
-            else {
+                setText(String.format("%02d",Integer.parseInt(time[0])%12 + 12) +":"+time[1]);
+            }else {
+                offAnimation.play();
                 amPm.setText("pm");
+                setText(String.format("%02d",(Integer.parseInt(time[0])%12))+":"+time[1]);
             }
         });
-    }
-
-    public String getTime(){
-        return display.getText();
     }
 
     private void addValueChangedListeners() {
             textProperty().addListener((observable, oldValue, newValue) -> {
             display.setText(newValue);
+                String[] time = display.getText().split(":");
+                if(time.length == 2) {
+                    arc1.setLength(Integer.parseInt(time[1]) * 6 * (-1));
+                    arc2.setLength((Integer.parseInt(time[0]) % 12) * 30 * (-1));
+                    if (Integer.parseInt(time[0]) < 13) {
+                        setOn(false);
+                        onAnimation.play();
+                        amPm.setText("am");
+                    } else {
+                        setOn(true);
+                        amPm.setText("pm");
+                        offAnimation.play();
+                    }
+                }
             relocateDisplay();
         });
-
-        arc1.lengthProperty().addListener((observable, oldValue, newValue) ->
-                setText(String.format("%2.0f",( -1 * (arc2.lengthProperty().getValue() / 30 +0.5) % 11)+ (getOn()?0:12))
-                        + ":" + String.format("%2.0f", (-1 * ((newValue.doubleValue() / 6) ) % 59) )));
+/*
+       arc1.lengthProperty().addListener((observable, oldValue, newValue) ->
+                setText(String.format("%02.0f",( -1 * (arc2.lengthProperty().getValue() / 30 +0.5) % 11)+ (getOn()?0:12))
+                        + ":" + String.format("%02.0f", (-1 * ((newValue.doubleValue() / 6) ) % 59) )));
         arc2.lengthProperty().addListener((observable, oldValue, newValue) ->
-                setText(String.format("%2.0f", (-1 * (newValue.doubleValue() / 30 +0.5) % 11)+(getOn()?0:12)) + ":"
-                        + String.format("%2.0f", -1 * (arc1.lengthProperty().getValue() / 6 ) % 59)));
+                setText(String.format("%02.0f", (-1 * (newValue.doubleValue() / 30 +0.5) % 11)+(getOn()?0:12)) + ":"
+                        + String.format("%02.0f", -1 * (arc1.lengthProperty().getValue() / 6 ) % 59)));
+
+
 
         onProperty().addListener((observable, oldValue, newValue) -> {
             onAnimation.stop();
             offAnimation.stop();
+            String[] time = display.getText().split(":");
             if (newValue) {
-                onAnimation.play();
+                if(time.length ==2) {
+                    onAnimation.play();
+                    setText(String.format("%02d", Integer.parseInt(time[0]) + (getOn() ? 0 : 12))
+                            + ":" + time[1]);
+                }
+
             } else {
-                offAnimation.play();
+                if(time.length ==2) {
+                    offAnimation.play();
+                    setText(String.format("%02d", Integer.parseInt(time[0]) + (getOn() ? 0 : 12))
+                            + ":" + time[1]);
+                }
+
             }
-        });
+        });*/
 
         // always needed
         widthProperty().addListener((observable, oldValue, newValue) -> resize());
@@ -310,7 +353,7 @@ public class SimpleControl extends Region {
                                 .angle(360 / 12 * n)
                                 .build()
                 )
-                .strokeWidth(2)
+                .strokeWidth(1.5)
                 .build();
     }
 

@@ -16,13 +16,13 @@
  *
  */
 
-package ch.fhnw.ws4c.circles.demo;
+package ch.fhnw.ws4c.circles02.demo;
 
 import javafx.geometry.Insets;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 
-import ch.fhnw.ws4c.circles.SimpleControl;
+import ch.fhnw.ws4c.circles02.SimpleControl;
 
 /**
  * @author Dieter Holz
@@ -42,16 +42,17 @@ public class DemoPane extends BorderPane {
 		setPadding(new Insets(10));
 
 		customControl = new SimpleControl();
-
+		valueField = new TextField();
 	}
 
 	private void layoutControls() {
 
 		setCenter(customControl);
+		setRight(valueField);
 	}
 
 	private void addBindings() {
-		//valueField.textProperty().bindBidirectional(customControl.textProperty());
+		valueField.textProperty().bindBidirectional(customControl.textProperty());
 	}
 
 }
